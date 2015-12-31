@@ -76,11 +76,7 @@ impl PlayerInternal {
     fn run(self) {
         portaudio::initialize().unwrap();
 
-        let stream = portaudio::stream::Stream::<i16, i16>::open_default(
-                0, 2, 44100.0,
-                portaudio::stream::FRAMES_PER_BUFFER_UNSPECIFIED,
-                None
-        ).unwrap();
+        let mut stream = None;
 
         let mut decoder = None;
 
@@ -93,9 +89,18 @@ impl PlayerInternal {
 
             match cmd {
                 Some(PlayerCommand::Load(track_id, play, position)) => {
+                    if stream.is_some() {
+                    } else {
+                        stream = Some(portaudio::stream::Stream::<i16, i16>::open_default(
+                             0, 2, 44100.0,
+                             portaudio::stream::FRAMES_PER_BUFFER_UNSPECIFIED,
+                             None
+                        ).unwrap());
+                    }
+
                     self.update(|state| {
                         if state.status == PlayStatus::kPlayStatusPlay {
-                            stream.stop().unwrap();
+                            stream.as_mut().unwrap().stop().unwrap();
                         }
                         state.end_of_track = false;
                         state.status = PlayStatus::kPlayStatusLoading;
@@ -127,7 +132,7 @@ impl PlayerInternal {
 
                     self.update(|state| {
                         state.status = if play {
-                            stream.start().unwrap();
+                            stream.as_mut().unwrap().start().unwrap();
                             PlayStatus::kPlayStatusPlay
                         } else {
                             PlayStatus::kPlayStatusPause
@@ -153,7 +158,7 @@ impl PlayerInternal {
                         return true;
                     });
 
-                    stream.start().unwrap();
+                    stream.as_mut().unwrap().start().unwrap();
                 },
                 Some(PlayerCommand::Pause) => {
                     self.update(|state| {
@@ -162,7 +167,7 @@ impl PlayerInternal {
                         return true;
                     });
 
-                    stream.stop().unwrap();
+                    stream.as_mut().unwrap().stop().unwrap();
                 },
                 Some(PlayerCommand::Stop) => {
                     self.update(|state| {
@@ -172,7 +177,8 @@ impl PlayerInternal {
                         return true;
                     });
 
-                    stream.stop().unwrap();
+                    stream = None;
+                    //sometimes a get a segfault on stream drop
                     decoder = None;
                 },
                 None => (),
@@ -181,7 +187,7 @@ impl PlayerInternal {
             if self.state.0.lock().unwrap().status == PlayStatus::kPlayStatusPlay {
                 match decoder.as_mut().unwrap().packets().next() {
                     Some(Ok(packet)) => {
-                        match stream.write(&packet.data) {
+                        match stream.as_mut().unwrap().write(&packet.data) {
                             Ok(_) => (),
                             Err(portaudio::PaError::OutputUnderflowed)
                                 => eprintln!("Underflow"),
@@ -197,7 +203,7 @@ impl PlayerInternal {
                             return true;
                         });
 
-                        stream.stop().unwrap();
+                        stream.as_mut().unwrap().stop().unwrap();
                         decoder = None;
                     }
                 }
