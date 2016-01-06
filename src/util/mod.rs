@@ -1,5 +1,5 @@
 use num::{BigUint, Integer, Zero, One};
-use rand::{Rng,Rand};
+use rand::{Rng, Rand};
 use std::io;
 use std::ops::{Mul, Rem, Shr};
 use std::fs;
@@ -44,7 +44,7 @@ pub fn rand_vec<G: Rng, R: Rand>(rng: &mut G, size: usize) -> Vec<R> {
         vec.push(R::rand(rng));
     }
 
-    return vec
+    vec
 }
 
 pub mod version {
@@ -66,10 +66,10 @@ pub trait IgnoreExt {
     fn ignore(self);
 }
 
-impl <T, E> IgnoreExt for Result<T, E> {
+impl<T, E> IgnoreExt for Result<T, E> {
     fn ignore(self) {
         match self {
-            Ok(_)  => (),
+            Ok(_) => (),
             Err(_) => (),
         }
     }
@@ -81,18 +81,19 @@ pub fn now_ms() -> i64 {
 }
 
 pub fn mkdir_existing(path: &Path) -> io::Result<()> {
-    fs::create_dir(path)
-        .or_else(|err| if err.kind() == io::ErrorKind::AlreadyExists {
+    fs::create_dir(path).or_else(|err| {
+        if err.kind() == io::ErrorKind::AlreadyExists {
             Ok(())
         } else {
             Err(err)
-        })
+        }
+    })
 }
 
 pub fn powm(base: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint {
     let mut base = base.clone();
     let mut exp = exp.clone();
-    let mut result : BigUint = One::one();
+    let mut result: BigUint = One::one();
 
     while !exp.is_zero() {
         if exp.is_odd() {
@@ -102,22 +103,22 @@ pub fn powm(base: &BigUint, exp: &BigUint, modulus: &BigUint) -> BigUint {
         base = (&base).mul(&base).rem(modulus);
     }
 
-    return result;
+    result
 }
 
 pub struct StrChunks<'s>(&'s str, usize);
 
 pub trait StrChunksExt {
-    fn chunks<'s>(&'s self, size: usize) -> StrChunks<'s>;
+    fn chunks(&self, size: usize) -> StrChunks;
 }
 
 impl StrChunksExt for str {
-    fn chunks<'a>(&'a self, size: usize) -> StrChunks<'a> {
+    fn chunks(&self, size: usize) -> StrChunks {
         StrChunks(self, size)
     }
 }
 
-impl <'s> Iterator for StrChunks<'s> {
+impl<'s> Iterator for StrChunks<'s> {
     type Item = &'s str;
     fn next(&mut self) -> Option<&'s str> {
         let &mut StrChunks(data, size) = self;
@@ -130,4 +131,3 @@ impl <'s> Iterator for StrChunks<'s> {
         }
     }
 }
-

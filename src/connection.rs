@@ -6,12 +6,10 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::result;
 
-use keys::SharedKeys;
-
 #[derive(Debug)]
 pub enum Error {
     IoError(io::Error),
-    Other
+    Other,
 }
 
 pub type Result<T> = result::Result<T, Error>;
@@ -26,13 +24,13 @@ impl convert::From<byteorder::Error> for Error {
     fn from(err: byteorder::Error) -> Error {
         match err {
             byteorder::Error::Io(e) => Error::IoError(e),
-            _ => Error::Other
+            _ => Error::Other,
         }
     }
 }
 
 pub struct PlainConnection {
-    stream: TcpStream
+    stream: TcpStream,
 }
 
 #[derive(Clone)]
@@ -74,16 +72,19 @@ impl PlainConnection {
         Ok(buffer)
     }
 
-    pub fn setup_cipher(self, keys: SharedKeys) -> CipherConnection {
-        CipherConnection{
-            stream: ShannonStream::new(self.stream, &keys.send_key(), &keys.recv_key())
-        }
+    pub fn into_stream(self) -> TcpStream {
+        self.stream
     }
 }
 
 impl CipherConnection {
+    pub fn new(stream: TcpStream, recv_key: &[u8], send_key: &[u8]) -> CipherConnection {
+        CipherConnection { stream: ShannonStream::new(stream, recv_key, send_key) }
+    }
+
     pub fn send_packet(&mut self, cmd: u8, data: &[u8]) -> Result<()> {
-        try!(self.stream.write_u8(cmd)); try!(self.stream.write_u16::<BigEndian>(data.len() as u16));
+        try!(self.stream.write_u8(cmd));
+        try!(self.stream.write_u16::<BigEndian>(data.len() as u16));
         try!(self.stream.write(data));
 
         try!(self.stream.finish_send());
@@ -108,12 +109,3 @@ impl CipherConnection {
 pub trait PacketHandler {
     fn handle(&mut self, cmd: u8, data: Vec<u8>);
 }
-
-/*
-            match packet.cmd {
-                0x09 => &self.dispatch.stream,
-                0xd | 0xe => &self.dispatch.audio_key,
-                0xb2...0xb6 => &self.dispatch.mercury,
-                _ => &self.dispatch.main,
-            }.send(packet).unwrap();
-            */

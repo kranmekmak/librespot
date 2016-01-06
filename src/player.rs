@@ -4,8 +4,8 @@ use std::sync::{mpsc, Mutex, Arc, Condvar, MutexGuard};
 use std::thread;
 use vorbis;
 
-use metadata::{Track, TrackRef};
-use session::Session;
+use metadata::{FileFormat, Track, TrackRef};
+use session::{Bitrate, Session};
 use audio_decrypt::AudioDecrypt;
 use util::{self, SpotifyId, Subfile};
 use spirc::{SpircState, SpircDelegate, PlayStatus};
@@ -22,7 +22,7 @@ pub struct PlayerState {
     position_measured_at: i64,
     update_time: i64,
 
-    end_of_track: bool
+    end_of_track: bool,
 }
 
 struct PlayerInternal {
@@ -36,11 +36,11 @@ enum PlayerCommand {
     Play,
     Pause,
     Stop,
-    Seek(u32)
+    Seek(u32),
 }
 
 impl Player {
-    pub fn new(session: &Session) -> Player {
+    pub fn new(session: Session) -> Player {
         let (cmd_tx, cmd_rx) = mpsc::channel();
 
         let state = Arc::new((Mutex::new(PlayerState {
@@ -49,17 +49,16 @@ impl Player {
             position_measured_at: 0,
             update_time: util::now_ms(),
             end_of_track: false,
-        }), Condvar::new()));
+        }),
+                              Condvar::new()));
 
         let internal = PlayerInternal {
-            session: session.clone(),
+            session: session,
             commands: cmd_rx,
-            state: state.clone()
+            state: state.clone(),
         };
 
-        thread::spawn(move || {
-            internal.run()
-        });
+        thread::spawn(move || internal.run());
 
         Player {
             commands: cmd_tx,
@@ -81,7 +80,8 @@ impl PlayerInternal {
         let mut decoder = None;
 
         loop {
-            let cmd = if self.state.0.lock().unwrap().status == PlayStatus::kPlayStatusPlay {
+            let playing = self.state.0.lock().unwrap().status == PlayStatus::kPlayStatusPlay;
+            let cmd = if playing {
                 self.commands.try_recv().ok()
             } else {
                 Some(self.commands.recv().unwrap())
@@ -103,24 +103,39 @@ impl PlayerInternal {
                             stream.as_mut().unwrap().stop().unwrap();
                         }
                         state.end_of_track = false;
-                        state.status = PlayStatus::kPlayStatusLoading;
+                        state.status = if play {
+                            PlayStatus::kPlayStatusPlay
+                        } else {
+                            PlayStatus::kPlayStatusPause
+                        };
                         state.position_ms = position;
                         state.position_measured_at = util::now_ms();
-                        return true;
+                        true
                     });
                     drop(decoder);
 
                     let mut track = self.session.metadata::<Track>(track_id).await().unwrap();
 
                     if !track.available {
-                        let alternatives = track.alternatives.iter()
-                            .map(|alt_id| self.session.metadata::<Track>(*alt_id))
-                            .collect::<Vec<TrackRef>>();
+                        let alternatives = track.alternatives
+                                                .iter()
+                                                .map(|alt_id| {
+                                                    self.session.metadata::<Track>(*alt_id)
+                                                })
+                                                .collect::<Vec<TrackRef>>();
 
-                        track = eventual::sequence(alternatives.into_iter()).iter().find(|alt| alt.available).unwrap();
+                        track = eventual::sequence(alternatives.into_iter())
+                                    .iter()
+                                    .find(|alt| alt.available)
+                                    .unwrap();
                     }
 
-                    let file_id = track.files[0];
+                    let format = match self.session.0.config.bitrate {
+                        Bitrate::Bitrate96 => FileFormat::OGG_VORBIS_96,
+                        Bitrate::Bitrate160 => FileFormat::OGG_VORBIS_160,
+                        Bitrate::Bitrate320 => FileFormat::OGG_VORBIS_320,
+                    };
+                    let (file_id, _) = track.files.into_iter().find(|&(_, f)| f == format).unwrap();
 
                     let key = self.session.audio_key(track.id, file_id).await().unwrap();
                     decoder = Some(
@@ -140,47 +155,49 @@ impl PlayerInternal {
                         state.position_ms = position;
                         state.position_measured_at = util::now_ms();
 
-                        return true;
+                        true
                     });
                     println!("Load Done");
                 }
                 Some(PlayerCommand::Seek(ms)) => {
                     decoder.as_mut().unwrap().time_seek(ms as f64 / 1000f64).unwrap();
                     self.update(|state| {
-                        state.position_ms = (decoder.as_mut().unwrap().time_tell().unwrap() * 1000f64) as u32;
+                        state.position_ms =
+                            (decoder.as_mut().unwrap().time_tell().unwrap() * 1000f64) as u32;
                         state.position_measured_at = util::now_ms();
-                        return true;
+
+                        true
                     });
-                },
+                }
                 Some(PlayerCommand::Play) => {
                     self.update(|state| {
                         state.status = PlayStatus::kPlayStatusPlay;
-                        return true;
+                        true
                     });
 
                     stream.as_mut().unwrap().start().unwrap();
-                },
+                }
                 Some(PlayerCommand::Pause) => {
                     self.update(|state| {
                         state.status = PlayStatus::kPlayStatusPause;
                         state.update_time = util::now_ms();
-                        return true;
+                        true
                     });
 
                     stream.as_mut().unwrap().stop().unwrap();
-                },
+                }
                 Some(PlayerCommand::Stop) => {
                     self.update(|state| {
                         if state.status == PlayStatus::kPlayStatusPlay {
                             state.status = PlayStatus::kPlayStatusPause;
                         }
-                        return true;
+                        true
                     });
 
                     stream = None;
                     //sometimes a get a segfault on stream drop
                     decoder = None;
-                },
+                }
                 None => (),
             }
 
@@ -189,18 +206,17 @@ impl PlayerInternal {
                     Some(Ok(packet)) => {
                         match stream.as_mut().unwrap().write(&packet.data) {
                             Ok(_) => (),
-                            Err(portaudio::PaError::OutputUnderflowed)
-                                => eprintln!("Underflow"),
-                            Err(e) => panic!("PA Error {}", e)
+                            Err(portaudio::PaError::OutputUnderflowed) => eprintln!("Underflow"),
+                            Err(e) => panic!("PA Error {}", e),
                         };
-                    },
+                    }
                     Some(Err(vorbis::VorbisError::Hole)) => (),
                     Some(Err(e)) => panic!("Vorbis error {:?}", e),
                     None => {
                         self.update(|state| {
                             state.status = PlayStatus::kPlayStatusStop;
                             state.end_of_track = true;
-                            return true;
+                            true
                         });
 
                         stream.as_mut().unwrap().stop().unwrap();
@@ -212,11 +228,13 @@ impl PlayerInternal {
                     let now = util::now_ms();
 
                     if now - state.position_measured_at > 5000 {
-                        state.position_ms = (decoder.as_mut().unwrap().time_tell().unwrap() * 1000f64) as u32;
+                        state.position_ms =
+                            (decoder.as_mut().unwrap().time_tell().unwrap() * 1000f64) as u32;
                         state.position_measured_at = now;
-                        return true;
+
+                        true
                     } else {
-                        return false;
+                        false
                     }
                 });
             }
@@ -228,7 +246,8 @@ impl PlayerInternal {
     }
 
     fn update<F>(&self, f: F)
-        where F: FnOnce(&mut MutexGuard<PlayerState>) -> bool {
+        where F: FnOnce(&mut MutexGuard<PlayerState>) -> bool
+    {
         let mut guard = self.state.0.lock().unwrap();
         let update = f(&mut guard);
         if update {
@@ -241,8 +260,7 @@ impl PlayerInternal {
 impl SpircDelegate for Player {
     type State = PlayerState;
 
-    fn load(&self, track: SpotifyId,
-            start_playing: bool, position_ms: u32) {
+    fn load(&self, track: SpotifyId, start_playing: bool, position_ms: u32) {
         self.command(PlayerCommand::Load(track, start_playing, position_ms));
     }
 
@@ -283,25 +301,24 @@ impl SpircDelegate for Player {
             }
         });
 
-        return update_rx;
+        update_rx
     }
 }
 
 impl SpircState for PlayerState {
     fn status(&self) -> PlayStatus {
-        return self.status;
+        self.status
     }
 
     fn position(&self) -> (u32, i64) {
-        return (self.position_ms, self.position_measured_at);
+        (self.position_ms, self.position_measured_at)
     }
 
     fn update_time(&self) -> i64 {
-        return self.update_time;
+        self.update_time
     }
 
     fn end_of_track(&self) -> bool {
-        return self.end_of_track;
+        self.end_of_track
     }
 }
-
