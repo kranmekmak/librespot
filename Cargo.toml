@@ -44,8 +44,6 @@ shannon         = { git = "https://github.com/plietar/rust-shannon" }
 vorbis          = "~0.0.14"
 tremor          = { git = "https://github.com/plietar/rust-tremor", optional = true }
 
-portaudio       = { git = "https://github.com/mvdnes/portaudio-rs", optional = true }
-libpulse-sys    = { git = "https://github.com/astro/libpulse-sys", optional = true }
 
 json_macros     = { git = "https://github.com/plietar/json_macros" }
 protobuf_macros = { git = "https://github.com/plietar/rust-protobuf-macros" }
@@ -61,6 +59,15 @@ vergen          = "~0.1.0"
 protobuf_macros = { git = "https://github.com/plietar/rust-protobuf-macros" }
 json_macros     = { git = "https://github.com/plietar/json_macros" }
 serde_codegen   = { version = "0.7", optional = true }
+
+[target.'cfg(unix)'.dependencies]
+alsa            = { git = "https://github.com/plietar/rust-alsa" }
+[target.i686-apple-darwin.dependencies]
+portaudio       = { git = "https://github.com/mvdnes/portaudio-rs", optional = true }
+libpulse-sys    = { git = "https://github.com/astro/libpulse-sys", optional = true }
+[target.x86_64-apple-darwin.dependencies]
+portaudio       = { git = "https://github.com/mvdnes/portaudio-rs", optional = true }
+libpulse-sys    = { git = "https://github.com/astro/libpulse-sys", optional = true }
 
 [features]
 with-syntex       = ["serde_codegen", "protobuf_macros/with-syntex", "json_macros/with-syntex"]
