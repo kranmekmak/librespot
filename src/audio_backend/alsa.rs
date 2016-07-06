@@ -5,8 +5,12 @@ use alsa::{PCM, Stream, Mode, Format, Access};
 pub struct AlsaSink(Option<PCM>);
 
 impl Open for AlsaSink {
-   fn open() -> AlsaSink {
+   fn open(device: Option<&str>) -> AlsaSink {
         println!("Using AlsaSink");
+
+        if device.is_some() {
+            panic!("alsa sink does not support specifying a device name yet");
+        }
 
         AlsaSink(None)
     }
