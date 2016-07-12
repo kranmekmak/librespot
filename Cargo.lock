@@ -15,7 +15,7 @@ dependencies = [
  "libpulse-sys 0.0.0 (git+https://github.com/astro/libpulse-sys)",
  "librespot-protocol 0.1.0",
  "linear-map 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "lmdb-rs 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lmdb-rs 0.7.0 (git+https://github.com/plietar/lmdb-rs)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "mdns 0.1.0 (git+http://github.com/plietar/rust-mdns)",
  "num 0.1.32 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -282,9 +282,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "liblmdb-sys"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "git+https://github.com/plietar/lmdb-rs#cf36b6e3a0c8efce2b89558d2721f8d8af8b1ba0"
 dependencies = [
+ "gcc 0.3.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -318,12 +320,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "lmdb-rs"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+version = "0.7.0"
+source = "git+https://github.com/plietar/lmdb-rs#cf36b6e3a0c8efce2b89558d2721f8d8af8b1ba0"
 dependencies = [
- "bitflags 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitflags 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "liblmdb-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "liblmdb-sys 0.2.0 (git+https://github.com/plietar/lmdb-rs)",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.71 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
