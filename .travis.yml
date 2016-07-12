@@ -18,6 +18,16 @@ addons:
       - portaudio19-dev
       - libpulse-dev 
 
+before_script:
+  - mkdir pi-tools
+  - curl -L https://github.com/raspberrypi/tools/archive/648a6eeb1e3c2b40af4eb34d88941ee0edeb3e9a.tar.gz | tar xzv --strip-components 1 -C pi-tools
+  - export PATH=$PWD/pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/:$PATH
+  - echo -e '#!/bin/bash\narm-linux-gnueabihf-gcc --sysroot $PWD/pi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/arm-bcm2708hardfp-linux-gnueabi/sysroot "$@"' > pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/gcc-sysroot
+  - chmod +x pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/gcc-sysroot
+  - mkdir -p ~/.cargo
+  - echo -e '[target.arm-unknown-linux-gnueabihf]\nlinker = "gcc-sysroot"' > ~/.cargo/config
+  - curl -L https://static.rust-lang.org/dist/rust-std-$TRAVIS_RUST_VERSION-arm-unknown-linux-gnueabihf.tar.gz | tar xz --strip-components 1 -C $(rustc --print sysroot)/lib/rustlib/
+
 script:
     - cargo build --no-default-features --features "with-syntex"
     - cargo build --no-default-features --features "with-syntex with-tremor"
@@ -29,6 +39,8 @@ script:
     - if [[ $TRAVIS_RUST_VERSION == *"nightly"* ]]; then
         cargo build --no-default-features --features "nightly";
       fi
+
+    - cargo build --target arm-unknown-linux-gnueabihf --release
 
 notifications:
     email: false
