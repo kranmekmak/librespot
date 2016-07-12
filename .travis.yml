@@ -22,13 +22,12 @@ before_script:
   - mkdir pi-tools
   - curl -L https://github.com/raspberrypi/tools/archive/648a6eeb1e3c2b40af4eb34d88941ee0edeb3e9a.tar.gz | tar xz --strip-components 1 -C pi-tools
   - export PATH=$PWD/pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/:$PATH
-  - echo -e '#!/bin/bash\narm-linux-gnueabihf-gcc --sysroot $PWD/pi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/arm-bcm2708hardfp-linux-gnueabi/sysroot "$@"' > pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/gcc-sysroot
+  - echo -e '#!/bin/bash' > pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/gcc-sysroot
+  - echo -e "arm-linux-gnueabihf-gcc --sysroot $PWD/pi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/arm-bcm2708hardfp-linux-gnueabi/sysroot \"\$@\"" >> pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/gcc-sysroot
   - chmod +x pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/gcc-sysroot
   - mkdir -p ~/.cargo
   - echo -e '[target.arm-unknown-linux-gnueabihf]\nlinker = "gcc-sysroot"' > ~/.cargo/config
-  - curl -OL https://static.rust-lang.org/dist/rust-std-$TRAVIS_RUST_VERSION-arm-unknown-linux-gnueabihf.tar.gz
-  - tar xzf rust-std-$TRAVIS_RUST_VERSION-arm-unknown-linux-gnueabihf.tar.gz
-  - rust-std-$TRAVIS_RUST_VERSION-arm-unknown-linux-gnueabihf/install.sh --prefix=$(rustc --print sysroot)
+  - sh ~/rust-installer/rustup.sh target add arm-unknown-linux-gnueabihf
 
 script:
     - cargo build --no-default-features --features "with-syntex"
