@@ -27,7 +27,7 @@ before_script:
   - chmod +x pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/gcc-sysroot
   - mkdir -p ~/.cargo
   - echo -e '[target.arm-unknown-linux-gnueabihf]\nlinker = "gcc-sysroot"' > ~/.cargo/config
-  - sh ~/rust-installer/rustup.sh --prefix=~/rust --spec=$TRAVIS_RUST_VERSION -y --disable-sudo --add-target=arm-unknown-linux-gnueabihf
+  - sh ~/rust-installer/rustup.sh --prefix=~/rust -y --disable-sudo --add-target=arm-unknown-linux-gnueabihf
 
 script:
     - cargo build --no-default-features --features "with-syntex"
