@@ -27,6 +27,7 @@ before_script:
   - chmod +x pi-tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/gcc-sysroot
   - curl -OL http://mirrordirector.raspbian.org/raspbian/pool/main/a/alsa-lib/libasound2_1.0.28-1_armhf.deb
   - ar p libasound2_1.0.28-1_armhf.deb data.tar.xz | tar -xJ -C pi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/arm-bcm2708hardfp-linux-gnueabi/sysroot/
+  - ln -s ld-linux.so.3 pi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/arm-bcm2708hardfp-linux-gnueabi/sysroot/lib/ld-linux-armhf.so.3
   - mkdir -p ~/.cargo
   - echo -e '[target.arm-unknown-linux-gnueabihf]\nlinker = "gcc-sysroot"' > ~/.cargo/config
   - sh ~/rust-installer/rustup.sh --prefix=$HOME/rust -y --disable-sudo --add-target=arm-unknown-linux-gnueabihf
