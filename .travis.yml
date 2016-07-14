@@ -56,7 +56,7 @@ script:
     - cargo build --target arm-unknown-linux-gnueabihf --release
 
 before_deploy:
-  zip librespot-linux-armhf-raspberry_pi.zip target/arm-unknown-linux-gnueabihf/release/librespot
+  zip -j librespot-linux-armhf-raspberry_pi.zip target/arm-unknown-linux-gnueabihf/release/librespot
 
 deploy:
   provider: releases
