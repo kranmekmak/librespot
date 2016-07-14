@@ -54,5 +54,16 @@ script:
 
     - cargo build --target arm-unknown-linux-gnueabihf --release
 
+deploy:
+  provider: releases
+  api_key:
+    secure: "cbVGQm9I8RN4qV5i+uE206vRvXoHqzGeDA7qmz6diNjLMWuhTxNf8Kzw1R0alUig2c0RPVslqnaaWTo01nCaB77SOK/E/EP4mCD2SesfGVLgbJ0iim/MB0GcwDPsCYeb1gx2fvdNGC5gnfWI75Bo/wCvfaGZL9bTb+5Dk63EVAVF70sj3RmQSoPC6VsPuPc3l/a6/Bxk2A2gGFZ5+k3JaUu9XYGjaGSzVPWKMG2mBhTKZcBIQivUul0C/31K6G5ZXhZTVA/7p01sDvYeuYOx8YSjnXcBqztkeNAZdRY6hYwi/rF3saBTJ6HX8c/KH6/XNvb94C2ZhCt+5MZ/zEdMoxVGVbiPkyJ/gJYcEsM43dc+ldB6OQTXnruVpy3v4gKieNhKgtPiVtXSlLHB87DAlORhJj8iQwBoNxSE0mUixCQbfQCqUFi/cXH9Xb3yPGa7288YYs0gymX+Pi6QvWPR4OP9JzKLeZiH826bTd3M1HiR/2zb+UAZ2sT8ggZgRHnBOBfQ2GOajuZ9DZ6HJMrr4GIw3vaFEbbR1S+Ujn93XRUVQZZWQRXTBXknBp/GJ2WTtddZPnGV3lSj7MXnk1H6t+mPpgJOY8cON3tWRpxosm/+838oiLdZNc9QGp6AkGaSCisW0LHr0uBvKkjUUx24dvhfl53Fmg6YAd2dbQtk8NE="
+  file: "target/arm-unknown-linux-gnueabihf/release/librespot"
+  skip_cleanup: true
+  on:
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
+
+
 notifications:
     email: false
