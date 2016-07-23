@@ -10,6 +10,7 @@ use rustc_serialize::base64::{self, ToBase64, FromBase64};
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
 use std::sync::{mpsc, Mutex};
+use std::net::{SocketAddrV4, Ipv4Addr, SocketAddrV6, Ipv6Addr, SocketAddr};
 use mdns;
 
 use authentication::Credentials;
@@ -171,7 +172,12 @@ pub fn discovery_login(device_name: &str, device_id: &str) -> Result<Credentials
         credentials_tx: Mutex::new(tx),
     };
 
-    let mut listener = hyper::net::HttpListener::new("0.0.0.0:0").unwrap();
+    let addrs: &[SocketAddr] = &[
+        SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 0, 0, 0)),
+        SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), 0))
+    ];
+    let mut listener = hyper::net::HttpListener::new(addrs).unwrap();
+
     let port = listener.local_addr().unwrap().port();
 
     let mut server = hyper::Server::new(listener).handle(handler).unwrap();
