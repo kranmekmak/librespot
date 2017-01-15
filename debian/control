@@ -1,0 +1,18 @@
+Source: librespot
+Section: sound
+Priority: optional
+Maintainer: herrernst <herr.ernst@gmail.com>
+Build-Depends: debhelper (>= 9), portaudio19-dev, cargo, rustc, ca-certificates
+Standards-Version: 3.9.8
+Homepage: https://github.com/plietar/librespot
+Vcs-Git: https://github.com/plietar/librespot
+Vcs-Browser: https://github.com/plietar/librespot
+
+Package: librespot
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Open Source Spotify client library
+ librespot is an open source client library for Spotify. It enables applications
+ to use Spotify's service, without using the official but closed-source
+ libspotify. Additionally, it will provide extra features which are not
+ available in the official library.
