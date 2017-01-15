@@ -17,6 +17,7 @@ addons:
       - libc6-dev-armhf-cross
       - libpulse-dev
       - portaudio19-dev
+      - devscripts
 
 before_script:
     - mkdir -p ~/.cargo
@@ -39,3 +40,15 @@ script:
 
 notifications:
     email: false
+
+before_deploy: debuild -us -uc -d
+deploy:
+  provider: packagecloud
+  repository: librespot
+  username: herrernst
+  dist: ubuntu/precise
+  on:
+    condition: "$TRAVIS_RUST_VERSION = stable"
+    tags: true
+  token:
+    secure: AO8S7L9j0xIX7pUskJpt3STDsY+402fYlKuwUdwuXQKzy+s6LiAlARkZlmOVSAmhRu6si+QuYh+6jKXGiDMZQUXDOM9KGwlmlRtAFhN9IfgFaUdLcFa00dkPmEd++hfHyQtVcLDouzwheSxJ0qb5xWNODujBDANQP5lFxL+j8R2xXLWRWBilogtHQOtIo8p8vJ7ztG+i7hYaUWU+aROgpUcTHckf4HBo88DT0fxQGnutkwC0n1as4gFCyxK6JAYA1u/2Tne/oJbvCrrvOdAILcLjY0MaKBmZT/2rtmSaPijF0Jr/EJRauU68M1U4n9veKrKscYo8AJhsfs5J+iuA7JB5s25AzEa+eruFkbVfXNIDL8ZSesrnGmYU8rqROIFSLlzynaJ1cpLcpGL/wnsCeaI3jlXlKhWaKO0r6TaFWlNAnhPgpqh6334H3O4Cg9LLDYSw6kvp9A+TU+MHFD+xoHs9AMTjhAO1/QdlqvAr6LBkNbrq+mxzLUQjsswRtjat3Cerh/mR2cUzDD2tYOFva/JV1cslouV0lSeKHGqjhD6UyqWSillcHyh3fL/jFt37ARQ6w+LDZeHKBcpPT8nASDB5dLOzemBU4lclX4yUetKrgaTxC6aRNF87A4i4upEChgX4OoV0R/GmxiNpE0EiDPfCJDaDVoubTpavAWEXgfQ=
