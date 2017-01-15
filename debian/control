@@ -2,7 +2,7 @@ Source: librespot
 Section: sound
 Priority: optional
 Maintainer: herrernst <herr.ernst@gmail.com>
-Build-Depends: debhelper (>= 9), portaudio19-dev, cargo, rustc, ca-certificates
+Build-Depends: debhelper (>= 9), portaudio19-dev, cargo, rustc, ca-certificates, dh-systemd
 Standards-Version: 3.9.8
 Homepage: https://github.com/plietar/librespot
 Vcs-Git: https://github.com/plietar/librespot

@@ -15,7 +15,7 @@
 
 
 %:
-	dh $@
+	dh $@ --with=systemd
 
 
 # dh_make generated override targets
@@ -37,3 +37,6 @@ override_dh_auto_install:
 
 override_dh_auto_test:
 	cargo test --release
+
+override_dh_installinit:
+	# We have no init scripts, only systemd
